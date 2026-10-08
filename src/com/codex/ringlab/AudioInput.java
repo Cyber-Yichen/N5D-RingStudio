@@ -1,0 +1,13 @@
+package com.codex.ringlab;
+import android.media.*;import android.media.audiofx.Visualizer;
+final class AudioInput {
+    volatile double rms=0,db=-120;volatile long samples=0;volatile String status="未采集";private volatile boolean running;private Thread thread;private AudioRecord record;private Visualizer visualizer;
+    void start(int source)throws Exception{
+        stop();
+        if(source==1){visualizer=new Visualizer(0);visualizer.setCaptureSize(512);visualizer.setScalingMode(Visualizer.SCALING_MODE_AS_PLAYED);if(visualizer.setEnabled(true)!=Visualizer.SUCCESS)throw new Exception("本机播放采集启动失败");status="本机播放 · 等待音乐";}
+        else{int size=AudioRecord.getMinBufferSize(16000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);if(size<=0)throw new Exception("麦克风不支持16kHz");record=new AudioRecord(MediaRecorder.AudioSource.MIC,16000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,Math.max(4096,size*2));if(record.getState()!=AudioRecord.STATE_INITIALIZED)throw new Exception("麦克风初始化失败");record.startRecording();if(record.getRecordingState()!=AudioRecord.RECORDSTATE_RECORDING)throw new Exception("麦克风未开始录音");status="麦克风 · 实时监听";}
+        running=true;thread=new Thread(()->{short[] pcm=new short[512];byte[] wave=new byte[512];try{while(running){double sum=0;int n;if(record!=null){n=record.read(pcm,0,pcm.length);if(n<0)throw new Exception("录音返回 "+n);for(int i=0;i<n;i++){double v=pcm[i]/32768.0;sum+=v*v;}}else{int code=visualizer.getWaveForm(wave);if(code!=Visualizer.SUCCESS)throw new Exception("播放波形返回 "+code);n=wave.length;for(byte b:wave){double v=((b&255)-128)/128.0;sum+=v*v;}Thread.sleep(40);}if(n>0){rms=Math.sqrt(sum/n);db=20*Math.log10(Math.max(.000001,rms));samples+=n;}}}catch(Exception e){if(running)status="音频失败："+e.getMessage();running=false;}},"ring-audio");thread.start();
+    }
+    void stop(){running=false;if(record!=null)try{record.stop();}catch(Exception ignored){}if(thread!=null)try{thread.join(300);}catch(Exception ignored){}if(record!=null){record.release();record=null;}if(visualizer!=null){visualizer.release();visualizer=null;}rms=0;db=-120;status="未采集";}
+    static void testTone(){new Thread(()->{AudioTrack track=null;try{int rate=16000;short[] pcm=new short[rate*3];for(int i=0;i<pcm.length;i++){double t=i/(double)rate;double envelope=(t% .6)<.2?.18:0;pcm[i]=(short)(Math.sin(2*Math.PI*880*t)*32767*envelope);}track=new AudioTrack(AudioManager.STREAM_MUSIC,rate,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,pcm.length*2,AudioTrack.MODE_STATIC);track.write(pcm,0,pcm.length);track.play();Thread.sleep(3200);}catch(Exception ignored){}finally{if(track!=null)track.release();}},"test-rhythm").start();}
+}

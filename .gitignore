@@ -1,0 +1,10 @@
+/build/
+/dist/
+*.jks
+*.keystore
+*.p12
+*.apk
+*.log
+.env
+.idea/
+.DS_Store
