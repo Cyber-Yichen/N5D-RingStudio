@@ -25,7 +25,7 @@ if [[ -n "${KEYSTORE:-}" ]]; then
     : "${KS_ALIAS:?Set KS_ALIAS}" "${KS_PASSWORD:?Set KS_PASSWORD}" "${KEY_PASSWORD:?Set KEY_PASSWORD}"
     apksigner sign --ks "$KEYSTORE" --ks-key-alias "$KS_ALIAS" --ks-pass env:KS_PASSWORD --key-pass env:KEY_PASSWORD --out "$APK" build/aligned.apk
     apksigner verify --verbose "$APK"
-    sha256sum "$APK" > dist/SHA256SUMS.txt
+    (cd dist && sha256sum N5D-RingEffects-1.0.apk) > dist/SHA256SUMS.txt
 else
     cp build/aligned.apk dist/N5D-RingEffects-1.0-unsigned.apk
     printf '%s\n' 'Unsigned APK: dist/N5D-RingEffects-1.0-unsigned.apk'

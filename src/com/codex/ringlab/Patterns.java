@@ -5,7 +5,7 @@ final class Patterns {
     static final String[] NAMES={"常亮","柔和呼吸","单点转圈","彗星拖尾","色彩流转","渐变呼吸","上下扫动","左右往返","波浪流动","双星追逐","星光闪烁","间隔追逐","彩白交替","雨滴下落","音乐呼吸","音乐电平","节拍脉冲"};
     static final int[] RGB={2,21,17,13,9,5,1,4,8,12,16,20,0,23,19,15,11,7,3,22,18,14,10,6};
     static final int[] WHITE={78,77,89,76,88,75,87,84,72,73,85,74,86,83,95,82,81,94,93,80,92,91,79,90};
-    static final String[] PALETTES={"绯红","鲜绿","深蓝","青色","紫罗兰","琥珀","纯白","光谱","深海","落日","糖霜","薄荷冰","桃花","自定义色卡"};
+    static final String[] PALETTES={"绯红","鲜绿","深蓝","青色","紫罗兰","琥珀","纯白","彩虹","深海","落日","糖霜","薄荷冰","桃花","自定义色卡"};
     static final int[] COLORS={0xffee3548,0xff31e585,0xff3d65ff,0xff00c9dc,0xffbf4cff,0xffffa338,0xffffffff};
     static boolean music(String id){return "music_breathe".equals(id)||"vu".equals(id)||"beat".equals(id);}
     static int index(String id){for(int i=0;i<IDS.length;i++)if(IDS[i].equals(id))return i;return 4;}
@@ -21,6 +21,11 @@ final class Patterns {
         int[] stops=p==8?new int[]{0xff1946fc,0xff00ddd2}:p==9?new int[]{0xffff325c,0xffffb738,0xffa22aea}:p==10?new int[]{0xff8e62ff,0xff02d9de,0xffff71b2}:p==11?new int[]{0xff20e8ac,0xff19a1ff}:p==12?new int[]{0xffff5295,0xffff9d5a}:custom;
         double x=wrap(pos+phase)*stops.length;return mix(stops[(int)x],stops[((int)x+1)%stops.length],x-Math.floor(x));
     }
+    static int defaultCount(int p){return p<7?1:p==8||p==11||p==12?2:p==9||p==10||p==13?3:8;}
+    static int[] colorStops(EffectSettings s){int[] custom=parseColors(s.colors),out=new int[s.colorCount];for(int i=0;i<out.length;i++)out[i]=s.palette==13?custom[Math.min(i,custom.length-1)]:palette(s.palette,i/(double)out.length,0,custom);return out;}
+    static int sample(int[] colors,double pos,double phase){double x=wrap(pos+phase)*colors.length;return mix(colors[(int)x],colors[((int)x+1)%colors.length],x-Math.floor(x));}
+    static String hex(int color){return String.format(java.util.Locale.US,"#%06X",color&0xffffff);}
+    static String encode(int[] colors){StringBuilder b=new StringBuilder();for(int color:colors){if(b.length()>0)b.append(',');b.append(hex(color));}return b.toString();}
     static final class Frame {final int[] channels=new int[96];int fade,whiteFade;}
     static Frame render(EffectSettings s,double phase,double audio,double pulse){
         Frame out=new Frame();double envelope=1;
@@ -28,7 +33,7 @@ final class Patterns {
         if(s.mode.equals("music_breathe"))envelope=audio;
         if(s.mode.equals("beat"))envelope=pulse;
         out.fade=(int)Math.round(s.brightness*envelope);out.whiteFade=(int)Math.round(s.white*envelope);
-        int[] custom=parseColors(s.colors);double move=s.reverse?-phase:phase;
+        int[] stops=colorStops(s);double move=s.reverse?-phase:phase;
         for(int kind=0;kind<2;kind++)for(int i=0;i<24;i++){
             double pos=(i+(kind==1?.5:0))/24.0,theta=pos*2*Math.PI;double intensity=1;
             if(s.mode.equals("chase"))intensity=Math.exp(-Math.pow(distance(pos,move)/(.025+s.softness*.00025),2));
@@ -50,7 +55,7 @@ final class Patterns {
             
             double colorPos=s.mode.equals("vu")?(1+Math.cos(theta))/2:s.mode.equals("gradient")?0:pos;
             double colorPhase=(s.mode.equals("rainbow")||s.mode.equals("gradient"))?move*.35:0;
-            int c=palette(s.palette,colorPos,colorPhase,custom);
+            int c=sample(stops,colorPos,colorPhase);
             if(kind==0){if(s.bank==1)intensity=0;int g=RGB[i]*3;out.channels[g]=(int)Math.round(Color.blue(c)*intensity);out.channels[g+1]=(int)Math.round(Color.green(c)*intensity);out.channels[g+2]=(int)Math.round(Color.red(c)*intensity);}
             else{if(s.bank==0)intensity=0;out.channels[WHITE[i]]=(int)Math.round(255*intensity);}
         }return out;
