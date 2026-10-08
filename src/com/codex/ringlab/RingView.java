@@ -23,6 +23,6 @@ final class RingView extends View {
             p.setAlpha(255);p.setColorFilter(new PorterDuffColorFilter(0xff0a1423,PorterDuff.Mode.SRC_IN));c.drawBitmap(logo,null,mark,p);p.setColorFilter(null);
             if(brightness>0){p.setMaskFilter(new BlurMaskFilter(r*.04f,BlurMaskFilter.Blur.NORMAL));p.setAlpha((int)(brightness*.35));c.drawBitmap(logo,null,mark,p);p.setMaskFilter(null);p.setAlpha(brightness);c.drawBitmap(logo,null,mark,p);}}
 
-        p.setAlpha(255);p.setColor(0xffeef4ff);p.setTypeface(Typeface.create("sans-serif-light",0));p.setTextSize(Math.min(getWidth(),getHeight())*.0875f);c.drawText(EffectsService.ringEnabled?Patterns.NAMES[Patterns.index(EffectsService.mode)]:"灯光已关闭",cx,cy+r*1.52f,p);
+        p.setAlpha(255);p.setColor(0xffeef4ff);p.setTypeface(Typeface.create("sans-serif-light",0));p.setTextSize(Math.min(getWidth(),getHeight())*.0875f);c.drawText(EffectsService.ringEnabled?(EffectsService.apiActive?("external".equals(EffectsService.mode)?"外部灯效":Patterns.NAMES[Patterns.index(EffectsService.mode)]):Patterns.NAMES[Patterns.index(EffectsService.mode)]):"灯光已关闭",cx,cy+r*1.52f,p);
     }
 }

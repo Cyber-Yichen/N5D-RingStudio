@@ -8,7 +8,7 @@ R8_JAR="${R8_JAR:?Set R8_JAR to your local R8 jar}"
 mkdir -p build/classes build/dex dist
 find build/classes -type f -name '*.class' -delete
 find build/dex -type f -name '*.dex' -delete
-aapt package -f -M AndroidManifest.xml -A assets -I "$ANDROID_JAR" -F build/resources.apk
+aapt package -f -M AndroidManifest.xml -A assets -S res -I "$ANDROID_JAR" -F build/resources.apk
 "${JAVA_BIN}javac" -encoding UTF-8 --release 8 -classpath "$ANDROID_JAR" -d build/classes src/com/codex/ringlab/*.java
 "${JAVA_BIN}jar" cf build/classes.jar -C build/classes .
 "${JAVA_BIN}java" -cp "$R8_JAR" com.android.tools.r8.D8 --min-api 23 --lib "$ANDROID_JAR" --output build/dex build/classes.jar
@@ -20,13 +20,13 @@ with zipfile.ZipFile('build/resources.apk') as src,zipfile.ZipFile('build/unsign
     for dex in Path('build/dex').glob('*.dex'):dst.write(dex,dex.name)
 PY
 zipalign -f 4 build/unsigned.apk build/aligned.apk
-APK=dist/N5D-RingEffects-1.0.apk
+APK=dist/N5D-RingEffects-1.1.apk
 if [[ -n "${KEYSTORE:-}" ]]; then
     : "${KS_ALIAS:?Set KS_ALIAS}" "${KS_PASSWORD:?Set KS_PASSWORD}" "${KEY_PASSWORD:?Set KEY_PASSWORD}"
     apksigner sign --ks "$KEYSTORE" --ks-key-alias "$KS_ALIAS" --ks-pass env:KS_PASSWORD --key-pass env:KEY_PASSWORD --out "$APK" build/aligned.apk
     apksigner verify --verbose "$APK"
-    (cd dist && sha256sum N5D-RingEffects-1.0.apk) > dist/SHA256SUMS.txt
+    (cd dist && sha256sum N5D-RingEffects-1.1.apk) > dist/SHA256SUMS.txt
 else
-    cp build/aligned.apk dist/N5D-RingEffects-1.0-unsigned.apk
-    printf '%s\n' 'Unsigned APK: dist/N5D-RingEffects-1.0-unsigned.apk'
+    cp build/aligned.apk dist/N5D-RingEffects-1.1-unsigned.apk
+    printf '%s\n' 'Unsigned APK: dist/N5D-RingEffects-1.1-unsigned.apk'
 fi
