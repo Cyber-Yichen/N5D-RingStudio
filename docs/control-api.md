@@ -88,6 +88,14 @@ context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
 
 申请会话时保存接管前的本地设置，并保持当前灯光帧，随后由调用者发送 EFFECT 或 FRAME。会话同时绑定实际 UID、随机 ID 和申请时的回调 Binder。不要把 `replyTo` 设置为其他进程的代理 Binder。
 
+### 1.2 的恢复过渡
+
+应用 1.2 沿用协议 v1。默认恢复从最后成功显示的硬件帧开始，约 1200 毫秒使用缓入缓出曲线渐变至恢复后的实时灯效；原灯效相位继续推进，音乐效果重新采集实时音量。彩灯、白灯与 Logo 同时过渡，DIM 和 FADE 会合并计算有效亮度，避免不同亮度设置导致跳变。
+
+正常 RELEASE、租约到期、调用进程死亡、关闭接口开关都采用同一恢复方式。接管前为关灯状态时，最后一帧缓慢熄灭，再停止灯效与音频采集。`restore_on_end=false`、`resume_local=false`、OFF、主界面关灯和退出仍立即关闭。主界面选择灯效立即接管；恢复期间再次申请接口，将从当前可见帧开始新的会话。
+
+HELLO 新增 `restore_transition_ms=1200` 和 `smooth_restore` 能力；STATE 新增 `restoring_local`、`restore_transition_ms`。RELEASE 的成功回复表示恢复已开始，不表示渐变已完成；可查询 `restoring_local=false` 确认完成。
+
 ### EFFECT
 
 `settings`：String，最多 4096 字符的 JSON 对象。未提供的字段保留当前值。只接受以下字段；未知字段、未知效果、类型不匹配或越界返回 `INVALID_ARGUMENT`。
@@ -108,6 +116,8 @@ context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
 | `waves` | int | 1～6 |
 | `density` | int | 5～90 |
 | `floor` | int | 0～80 |
+| `breath_hold` | int | 0～100，默认 55；普通呼吸效果峰谷停留程度，0 保持原节奏 |
+| `rotation_speed` | int | 1～100，默认 35；流光呼吸独立旋转速度 |
 | `source` | int | 0 麦克风、1 本机播放 |
 | `gain`, `release` | int | 0～100 |
 | `gate` | int | 30～85 |
@@ -117,6 +127,12 @@ context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
 ```json
 {"mode":"comet","palette":13,"colors":"#00D9CF,#FFAA00","color_count":2,"brightness":96,"white":35,"bank":2,"tail":12,"softness":80}
 ```
+
+### 1.2 的流光呼吸
+
+效果 ID `orbit_breathe`（流光呼吸）在呼吸的同时旋转柔和光带，支持单色、多色与白灯。`speed` 控制呼吸速度，`rotation_speed` 独立控制旋转速度，`reverse` 控制旋转方向，`width` 控制光带宽度。
+
+`breathe`、`gradient` 和 `orbit_breathe` 使用可调的非线性呼吸时序。`breath_hold` 越高，越接近峰值或谷值时越缓慢，中间段相应加快；完整周期时长由 speed 决定，不因停留程度增加而改变。0 保持原余弦呼吸曲线；100 为最明显的缓停，没有突变或完全停灯。最低亮度仍由 floor 控制。音乐呼吸实时响应音量，不采用周期性峰谷停留。
 
 ### FRAME
 

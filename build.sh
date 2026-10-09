@@ -20,13 +20,13 @@ with zipfile.ZipFile('build/resources.apk') as src,zipfile.ZipFile('build/unsign
     for dex in Path('build/dex').glob('*.dex'):dst.write(dex,dex.name)
 PY
 zipalign -f 4 build/unsigned.apk build/aligned.apk
-APK=dist/N5D-RingEffects-1.1.apk
+APK=dist/N5D-RingEffects-1.2.apk
 if [[ -n "${KEYSTORE:-}" ]]; then
     : "${KS_ALIAS:?Set KS_ALIAS}" "${KS_PASSWORD:?Set KS_PASSWORD}" "${KEY_PASSWORD:?Set KEY_PASSWORD}"
     apksigner sign --ks "$KEYSTORE" --ks-key-alias "$KS_ALIAS" --ks-pass env:KS_PASSWORD --key-pass env:KEY_PASSWORD --out "$APK" build/aligned.apk
     apksigner verify --verbose "$APK"
-    (cd dist && sha256sum N5D-RingEffects-1.1.apk) > dist/SHA256SUMS.txt
+    (cd dist && sha256sum N5D-RingEffects-1.2.apk) > dist/SHA256SUMS.txt
 else
-    cp build/aligned.apk dist/N5D-RingEffects-1.1-unsigned.apk
-    printf '%s\n' 'Unsigned APK: dist/N5D-RingEffects-1.1-unsigned.apk'
+    cp build/aligned.apk dist/N5D-RingEffects-1.2-unsigned.apk
+    printf '%s\n' 'Unsigned APK: dist/N5D-RingEffects-1.2-unsigned.apk'
 fi

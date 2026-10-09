@@ -1,12 +1,13 @@
 package com.codex.ringlab;
 import android.graphics.Color;
 final class Patterns {
-    static final String[] IDS={"solid","breathe","chase","comet","rainbow","gradient","sweep","bounce","wave","duet","sparkle","theater","alternating","rain","music_breathe","vu","beat"};
-    static final String[] NAMES={"常亮","柔和呼吸","单点转圈","彗星拖尾","色彩流转","渐变呼吸","上下扫动","左右往返","波浪流动","双星追逐","星光闪烁","间隔追逐","彩白交替","雨滴下落","音乐呼吸","音乐电平","节拍脉冲"};
+    static final String[] IDS={"solid","breathe","chase","comet","rainbow","gradient","sweep","bounce","wave","duet","sparkle","theater","alternating","rain","music_breathe","vu","beat","orbit_breathe"};
+    static final String[] NAMES={"常亮","柔和呼吸","单点转圈","彗星拖尾","色彩流转","渐变呼吸","上下扫动","左右往返","波浪流动","双星追逐","星光闪烁","间隔追逐","彩白交替","雨滴下落","音乐呼吸","音乐电平","节拍脉冲","流光呼吸"};
     static final int[] RGB={2,21,17,13,9,5,1,4,8,12,16,20,0,23,19,15,11,7,3,22,18,14,10,6};
     static final int[] WHITE={78,77,89,76,88,75,87,84,72,73,85,74,86,83,95,82,81,94,93,80,92,91,79,90};
     static final String[] PALETTES={"绯红","鲜绿","深蓝","青色","紫罗兰","琥珀","纯白","彩虹","深海","落日","糖霜","薄荷冰","桃花","自定义色卡"};
     static final int[] COLORS={0xffee3548,0xff31e585,0xff3d65ff,0xff00c9dc,0xffbf4cff,0xffffa338,0xffffffff};
+    static boolean breathing(String id){return "breathe".equals(id)||"gradient".equals(id)||"orbit_breathe".equals(id);}
     static boolean music(String id){return "music_breathe".equals(id)||"vu".equals(id)||"beat".equals(id);}
     static int index(String id){for(int i=0;i<IDS.length;i++)if(IDS[i].equals(id))return i;return 4;}
     static boolean valid(String id){return IDS[index(id)].equals(id);}
@@ -27,16 +28,17 @@ final class Patterns {
     static String hex(int color){return String.format(java.util.Locale.US,"#%06X",color&0xffffff);}
     static String encode(int[] colors){StringBuilder b=new StringBuilder();for(int color:colors){if(b.length()>0)b.append(',');b.append(hex(color));}return b.toString();}
     static final class Frame {final int[] channels=new int[96];int fade,whiteFade;}
-    static Frame render(EffectSettings s,double phase,double audio,double pulse){
+    static Frame render(EffectSettings s,double phase,double spin,double audio,double pulse){
         Frame out=new Frame();double envelope=1;
-        if(s.mode.equals("breathe")||s.mode.equals("gradient"))envelope=s.floor/100.0+(1-s.floor/100.0)*(1-Math.cos(phase*2*Math.PI))/2;
+        if(breathing(s.mode))envelope=s.floor/100.0+(1-s.floor/100.0)*BreathCurve.level(phase,s.breathHold);
         if(s.mode.equals("music_breathe"))envelope=audio;
         if(s.mode.equals("beat"))envelope=pulse;
         out.fade=(int)Math.round(s.brightness*envelope);out.whiteFade=(int)Math.round(s.white*envelope);
         int[] stops=colorStops(s);double move=s.reverse?-phase:phase;
         for(int kind=0;kind<2;kind++)for(int i=0;i<24;i++){
             double pos=(i+(kind==1?.5:0))/24.0,theta=pos*2*Math.PI;double intensity=1;
-            if(s.mode.equals("chase"))intensity=Math.exp(-Math.pow(distance(pos,move)/(.025+s.softness*.00025),2));
+            if(s.mode.equals("orbit_breathe"))intensity=.08+.92*Math.exp(-Math.pow(distance(pos,s.reverse?-spin:spin)/(s.width/200.0),2));
+            else if(s.mode.equals("chase"))intensity=Math.exp(-Math.pow(distance(pos,move)/(.025+s.softness*.00025),2));
             else if(s.mode.equals("comet")){
                 
                 double head=.008+s.softness*.00045,tail=s.tail/24.0;
@@ -54,7 +56,7 @@ final class Patterns {
             else if(s.mode.equals("vu")){double height=(1+Math.cos(theta))/2;intensity=clamp((audio-height)*12+.5);}
             
             double colorPos=s.mode.equals("vu")?(1+Math.cos(theta))/2:s.mode.equals("gradient")?0:pos;
-            double colorPhase=(s.mode.equals("rainbow")||s.mode.equals("gradient"))?move*.35:0;
+            double colorPhase=s.mode.equals("orbit_breathe")?(s.reverse?spin:-spin):(s.mode.equals("rainbow")||s.mode.equals("gradient"))?move*.35:0;
             int c=sample(stops,colorPos,colorPhase);
             if(kind==0){if(s.bank==1)intensity=0;int g=RGB[i]*3;out.channels[g]=(int)Math.round(Color.blue(c)*intensity);out.channels[g+1]=(int)Math.round(Color.green(c)*intensity);out.channels[g+2]=(int)Math.round(Color.red(c)*intensity);}
             else{if(s.bank==0)intensity=0;out.channels[WHITE[i]]=(int)Math.round(255*intensity);}
