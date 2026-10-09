@@ -137,7 +137,7 @@ context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
 
 服务缓存最新完整帧，每约 40 ms 输出一次，不排队播放历史帧。调用者自行实现动画并按 ≤25 fps 发送；服务保持最后一帧直到新帧或租约到期。不要通过超速发帧模拟更高刷新率。高亮度运行需考虑实际供电与发热。
 
-raw96 的 DIM 顺序、BGR 接线与映射在 [硬件说明](hardware.md)；能力查询中的 mapping_id 用于辨认映射版本。
+raw96 的 DIM 顺序、BGR 接线与完整位置图在 [灯光顺序与位置说明](light-layout.md)；能力查询中的 mapping_id 用于辨认映射版本。
 
 ### LOGO
 

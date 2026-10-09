@@ -70,6 +70,7 @@ adb install -r N5D-RingEffects-1.1.apk
 
 - [本机控制接口与 Java 示例](docs/control-api.md)
 - [源码构建](docs/build.md)
+- [灯光顺序、位置图与通道表](docs/light-layout.md)
 - [硬件映射与显示适配](docs/hardware.md)
 - [应用图标与生成提示词](docs/logo.md)
 
